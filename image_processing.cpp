@@ -397,7 +397,7 @@ void imageProcess(Drone *drone){
                     //std::cout << "x:" << startpoint.x << " y:"<<startpoint.y << std::endl;
 
                     cvCircle(image,startpoint,5,cvScalar(200,50,50),2);
-                    cvCircle(image,drone->dst_pos,5,cvScalar(50,200,50),2);
+                    cvCircle(image,cvPoint(drone->dst_pos.x,drone->dst_pos.y),5,cvScalar(50,200,50),2);
                     drone->cur_pos.x=startpoint.x;
                     drone->cur_pos.y=startpoint.y;
 
