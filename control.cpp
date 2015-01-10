@@ -69,7 +69,7 @@ void control(Drone *drone,CCrazyflie *cflieCopter) {
         double vy = kp * error_y + ki * integral_y + kd * derivative_y;
         double vz = 0.0;
         double vr = 0.0;
-        std::cout << "(vx, vy)" << "(" << vx << "," << vy << ")" << "thrust" << base_thrust + thrust_constant * vy << std::endl;
+        //std::cout << "(vx, vy)" << "(" << vx << "," << vy << ")" << "thrust" << base_thrust + thrust_constant * vy << std::endl;
 
         cflieCopter->setThrust(base_thrust + thrust_constant * vy);
     }else{//clock()は1秒程度の短時間用らしい
@@ -81,7 +81,7 @@ void control(Drone *drone,CCrazyflie *cflieCopter) {
         }
         else if(buf_t>lost_threshold){
             cflieCopter->setThrust(0);
-            printf("totally lost. set thrust 0\n");
+            //printf("totally lost. set thrust 0\n");
         }
     }
 }
