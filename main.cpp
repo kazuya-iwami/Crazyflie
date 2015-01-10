@@ -18,7 +18,6 @@ using namespace std;
 int main(int argc, char **argv) {
     CCrazyRadio *crRadio = new CCrazyRadio("radio://0/10/250K");
     cv::VideoCapture cap;
-    cv::Mat frame;
     Drone *drone = new Drone();
 
 
@@ -32,27 +31,11 @@ int main(int argc, char **argv) {
         cflieCopter->setThrust(0);
         cflieCopter->setSendSetpoints(true);
 
-        /*  init camera */
-//        cap.open(0);
-//        if (!cap.isOpened()) {
-//            cout << "can't open camera" << endl;
-//            return 0;
-//        }
-
         imageInit();
 
         cv::namedWindow("output", 1);
 
         while (cflieCopter->cycle() && loop_flag) { //begin loop
-            //cout << cflieCopter->yaw() << " " << cflieCopter->roll()<< " " << cflieCopter->pitch();
-            //cout << "thrust "<< cflieCopter->thrust() << endl;
-
-
-
-//            cap >> frame;
-//            if (frame.empty()) {
-//                break;
-//            }
 
             imageProcess(drone);
 

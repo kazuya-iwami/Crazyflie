@@ -183,7 +183,7 @@ void imageInit(){
 }
 
 
-void imageProcess(Drone &drone){
+void imageProcess(Drone *drone){
 
     cvClearMemStorage(storage);
     cvClearMemStorage(storagepoly);
