@@ -54,8 +54,6 @@ int main(int argc, char **argv) {
 //                break;
 //            }
 
-            imageProcess(drone);
-
             int k = cvWaitKey(33);
             switch (k) {
                 case 'q':
