@@ -16,9 +16,9 @@ CvCapture *capture;
 IplImage *image;
 IplImage *capimg;
 
-int minH = 0, maxH = 255;
-int minS = 0, maxS = 255;
-int minV = 0, maxV = 255;
+int minH, maxH ;
+int minS, maxS ;
+int minV, maxV ;
 
 void imageInit(){
 
@@ -58,27 +58,27 @@ void imageInit(){
     cvRandInit(&(con->RandS[3]),  -5,  5, (int)cvGetTickCount());
 
     // 閾値
-    int minH = 0, maxH = 255;
-    int minS = 0, maxS = 255;
-    int minV = 0, maxV = 255;
+    minH = 129, maxH = 150;
+    minS = 127, maxS = 255;
+    minV = 0, maxV = 255;
 
-    // ウィンドウ
-    cvNamedWindow("binalized");
-    cvCreateTrackbar("H max", "binalized", &maxH, 255);
-    cvCreateTrackbar("H min", "binalized", &minH, 255);
-    cvCreateTrackbar("S max", "binalized", &maxS, 255);
-    cvCreateTrackbar("S min", "binalized", &minS, 255);
-    cvCreateTrackbar("V max", "binalized", &maxV, 255);
-    cvCreateTrackbar("V min", "binalized", &minV, 255);
-    cvResizeWindow("binalized", 0, 0);
-
-    cvNamedWindow ("capture_image", CV_WINDOW_AUTOSIZE);
 
 
 }
 
-
 void imageProcess(Drone *drone){
+
+    // ウィンドウ
+
+//    cvNamedWindow ("capture_image", CV_WINDOW_AUTOSIZE);
+//    cvNamedWindow("binalized");
+//    cvCreateTrackbar("H max", "binalized", &maxH, 255);
+//    cvCreateTrackbar("H min", "binalized", &minH, 255);
+//    cvCreateTrackbar("S max", "binalized", &maxS, 255);
+//    cvCreateTrackbar("S min", "binalized", &minS, 255);
+//    cvCreateTrackbar("V max", "binalized", &maxV, 255);
+//    cvCreateTrackbar("V min", "binalized", &minV, 255);
+//    cvResizeWindow("binalized", 0, 0);
 
     drone->captured_flag=false;
 
