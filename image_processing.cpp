@@ -394,9 +394,9 @@ void imageProcess(Drone *drone){
 
                     startpoint=cvPoint((int)dstPoints2D->data.fl[0], (int)dstPoints2D->data.fl[1]);
 
-                    std::cout << "x:" << startpoint.x << " y:"<<startpoint.y << std::endl;
-                    drone.cur_pos.x=startpoint.x;
-                    drone.cur_pos.y=startpoint.y;
+                    //std::cout << "x:" << startpoint.x << " y:"<<startpoint.y << std::endl;
+                    drone->cur_pos.x=startpoint.x;
+                    drone->cur_pos.y=startpoint.y;
 
 //                        for(j=1;j<4;j++)
 //                        {

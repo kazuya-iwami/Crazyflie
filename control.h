@@ -21,7 +21,7 @@ public:
 
 };
 
-int getMove(Drone drone,CCrazyflie *cflieCopter);
+void control(Drone *drone,CCrazyflie *cflieCopter);
 
 
 

@@ -30,11 +30,11 @@ static double integral_x = 0.0, integral_y = 0.0;//積分用
 static double previous_error_x = 0.0, previous_error_y = 0.0;//微分用
 
 
-int getMove(Drone drone,CCrazyflie *cflieCopter) {
+void control(Drone *drone,CCrazyflie *cflieCopter) {
 
     //　目標座標までの差
-    double error_x = drone.cur_pos.x-drone.dst_pos.x;
-    double error_y = -(drone.cur_pos.y-drone.dst_pos.y);//opencvの座標系ではyが大きくなるほど下に行くから
+    double error_x = drone->cur_pos.x-drone->dst_pos.x;
+    double error_y = -(drone->cur_pos.y-drone->dst_pos.y);//opencvの座標系ではyが大きくなるほど下に行くから
 
     // 時間 [s]
     double dt = (getTickCount() - last_t) / getTickFrequency();

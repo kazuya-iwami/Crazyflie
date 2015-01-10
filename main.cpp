@@ -37,6 +37,8 @@ int main(int argc, char **argv) {
 
         while (cflieCopter->cycle() && loop_flag) { //begin loop
 
+            imageProcess(drone);
+            control(drone,cflieCopter);
             int k = cvWaitKey(33);
             switch (k) {
                 case 'q':
