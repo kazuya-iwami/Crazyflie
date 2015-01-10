@@ -1,7 +1,8 @@
 #pragma once
+#include "include/cflie/CCrazyflie.h"
 
 class Pos {
-
+public:
     Pos(int _x, int _y);
     int x;
     int y;
@@ -20,7 +21,7 @@ public:
 
 };
 
-int getMove(Drone drone);
+void control(Drone *drone,CCrazyflie *cflieCopter);
 
 
 
