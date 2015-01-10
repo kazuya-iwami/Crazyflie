@@ -23,7 +23,7 @@ add_library(${PROJECT_NAME}
   src/cflie/CCRTPPacket.cpp
   src/cflie/CTOC.cpp)
 
-set(SOURCE_FILES main.cpp)
+set(SOURCE_FILES main.cpp control.cpp image_processing.cpp)
 add_executable(crazyflie ${SOURCE_FILES})
 
 

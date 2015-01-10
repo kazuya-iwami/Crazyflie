@@ -1,11 +1,16 @@
 #include <iostream>
-#include <stdio.h>
 
+#include "image_processing.h"
+#include "control.h"
+
+#include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include <cflie/CCrazyflie.h>
+#include "include/cflie/CCrazyflie.h"
+
+
 
 
 using namespace std;
@@ -14,6 +19,9 @@ int main(int argc, char **argv) {
     CCrazyRadio *crRadio = new CCrazyRadio("radio://0/10/250K");
     cv::VideoCapture cap;
     cv::Mat frame;
+    Drone *drone = new Drone();
+
+
 
     bool loop_flag = true;
 
@@ -31,25 +39,22 @@ int main(int argc, char **argv) {
             return 0;
         }
 
+        imageInit();
+
         cv::namedWindow("output", 1);
-
-        /*  init backgroundSubstractor  */
-        //cv::BackgroundSubtractorGMG backGroundSubtractor;
-
-
-
 
         while (cflieCopter->cycle() && loop_flag) { //begin loop
             //cout << cflieCopter->yaw() << " " << cflieCopter->roll()<< " " << cflieCopter->pitch();
             //cout << "thrust "<< cflieCopter->thrust() << endl;
+
+
 
             cap >> frame;
             if (frame.empty()) {
                 break;
             }
 
-
-            cv::imshow("output", frame);
+            imageProcess(frame, drone);
 
             int k = cvWaitKey(33);
             switch (k) {
@@ -65,6 +70,14 @@ int main(int argc, char **argv) {
                     cflieCopter->setThrust(40001);
                     cout << "set 10001" << endl;
                     break;
+                case 'z':
+                    cflieCopter->setYaw(0.0);
+                    cout << "set 0" << endl;
+                    break;
+                case 'x':
+                    cflieCopter->setYaw(90.0);
+                    cout << "set 10001" << endl;
+                    break;
             }
 
         } //end loop
@@ -74,6 +87,7 @@ int main(int argc, char **argv) {
         cerr << "Could not connect to dongle. Did you plug it in?" << endl;
     }
 
+    imageRelease();
     delete crRadio;
     return 0;
 }
