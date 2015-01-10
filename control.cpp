@@ -16,7 +16,7 @@ using namespace cv;
 // base thrust
 const int base_thrust=38000;
 const int thrust_constant=2000;
-
+const double lost_threshold=0.3;
 // PID gain
 
 // proportion
@@ -33,7 +33,7 @@ static double previous_error_x = 0.0, previous_error_y = 0.0;//微分用
 
 
 void control(Drone *drone,CCrazyflie *cflieCopter) {
-    if(!drone->captured_flag) {
+    if(drone->captured_flag) {
         lost_t=0.0;
         //　目標座標までの差
         double error_x = drone->cur_pos.x - drone->dst_pos.x;
@@ -73,12 +73,15 @@ void control(Drone *drone,CCrazyflie *cflieCopter) {
 
         cflieCopter->setThrust(base_thrust + thrust_constant * vy);
     }else{//clock()は1秒程度の短時間用らしい
+        double buf_t=(double)clock()/CLOCKS_PER_SEC-lost_t;
+        //printf("%f\n",buf_t);
         if(lost_t==0.0){//lostした時の時間をメモ
             lost_t=(double)clock()/CLOCKS_PER_SEC;
             cflieCopter->setThrust(base_thrust);
-        } else if((double)clock()/CLOCKS_PER_SEC-lost_t>1.0){
-                cflieCopter->setThrust(0);
-                printf("totally lost. set thrust 0");
+        }
+        else if(buf_t>lost_threshold){
+            cflieCopter->setThrust(0);
+            printf("totally lost. set thrust 0\n");
         }
     }
 }
