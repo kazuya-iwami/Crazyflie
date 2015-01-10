@@ -185,6 +185,8 @@ void imageInit(){
 
 void imageProcess(Drone *drone){
 
+    bool captured_flag = false;
+
     cvClearMemStorage(storage);
     cvClearMemStorage(storagepoly);
 
@@ -400,6 +402,7 @@ void imageProcess(Drone *drone){
                     cvCircle(image,cvPoint(drone->dst_pos.x,drone->dst_pos.y),5,cvScalar(50,200,50),2);
                     drone->cur_pos.x=startpoint.x;
                     drone->cur_pos.y=startpoint.y;
+                    captured_flag = true;
 
 //                        for(j=1;j<4;j++)
 //                        {
@@ -430,6 +433,8 @@ void imageProcess(Drone *drone){
 
         }
     }
+
+    drone->captured_flag = captured_flag;
 
     process_time = (double)cvGetTickCount()-process_time;
 

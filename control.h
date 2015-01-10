@@ -19,6 +19,7 @@ public:
 
     Pos cur_pos;//クアッドコプターの現在の画面上の位置
     Pos dst_pos;//目標座標
+    bool captured_flag;//カメラに捕捉されているか
 
 };
 
