@@ -33,11 +33,11 @@ int main(int argc, char **argv) {
         cflieCopter->setSendSetpoints(true);
 
         /*  init camera */
-        cap.open(0);
-        if (!cap.isOpened()) {
-            cout << "can't open camera" << endl;
-            return 0;
-        }
+//        cap.open(0);
+//        if (!cap.isOpened()) {
+//            cout << "can't open camera" << endl;
+//            return 0;
+//        }
 
         imageInit();
 
@@ -49,12 +49,12 @@ int main(int argc, char **argv) {
 
 
 
-            cap >> frame;
-            if (frame.empty()) {
-                break;
-            }
+//            cap >> frame;
+//            if (frame.empty()) {
+//                break;
+//            }
 
-            imageProcess(frame, drone);
+            imageProcess(drone);
 
             int k = cvWaitKey(33);
             switch (k) {

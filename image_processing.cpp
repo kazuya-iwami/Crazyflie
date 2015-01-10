@@ -18,25 +18,63 @@ void BubSort(float arr[ ], int n);
 int decodeMarker(IplImage* src,int& MarkerDirection);
 
 
+CvMat *intrinsic;
+CvMat *distortion;
+
+CvMat object_points;
+CvMat image_points;
+
+CvMat *rotation;
+CvMat *translation;
+
+char text[255] = "";
+CvFont dfont;
+
+//軸の座標生成用
+CvMat *srcPoints3D ;//元の3次元座標
+CvMat *dstPoints2D;//画面に投影したときの2次元座標
+
+CvPoint3D32f baseMarkerPoints[4];
+
+CvMemStorage *storage;
+CvMemStorage *storagepoly;
+double	process_time;
+
+IplImage* image;
+IplImage* gsImage;
+IplImage* gsImageContour;
+
+CvCapture *capture;
+IplImage * capimg;
+
+CvSeq *firstcontour=NULL;
+CvSeq *polycontour=NULL;
+
+int contourCount;
+
+
+CvMat *map_matrix;
+CvPoint2D32f src_pnt[4], dst_pnt[4], tmp_pnt[4];
+
+IplImage *marker_inside;
+IplImage *marker_inside_zoom;
+IplImage *tmp_img;
+
 void imageInit(){
 
     #define MARKER_SIZE (70)       /* マーカーの内側の1辺のサイズ[mm] */
 
-    CvMat *intrinsic = (CvMat*)cvLoad("intrinsic.xml");
-    CvMat *distortion = (CvMat*)cvLoad("distortion.xml");
+    intrinsic = (CvMat*)cvLoad("intrinsic.xml");
+    distortion = (CvMat*)cvLoad("distortion.xml");
     int i,j,k;
 
-    CvMat object_points;
-    CvMat image_points;
-
-    CvMat *rotation = cvCreateMat (1, 3, CV_32FC1);
-    CvMat *translation = cvCreateMat (1 , 3, CV_32FC1);
+    rotation = cvCreateMat (1, 3, CV_32FC1);
+    translation = cvCreateMat (1 , 3, CV_32FC1);
 
     //軸の座標生成用
-    CvMat *srcPoints3D = cvCreateMat (4, 1, CV_32FC3);//元の3次元座標
-    CvMat *dstPoints2D = cvCreateMat (4, 1, CV_32FC2);//画面に投影したときの2次元座標
+    srcPoints3D = cvCreateMat (4, 1, CV_32FC3);//元の3次元座標
+    dstPoints2D = cvCreateMat (4, 1, CV_32FC2);//画面に投影したときの2次元座標
 
-    CvPoint3D32f baseMarkerPoints[4];
     //四角が物理空間上ではどの座標になるかを指定する。
     //コーナー      実際の座標(mm)
     //   X   Y     X    Y
@@ -88,30 +126,28 @@ void imageInit(){
     ////////////////////////////////////
 
 
-    IplImage* image;
-    IplImage* gsImage;
-    IplImage* gsImageContour;
-
-    CvCapture *capture = cvCaptureFromCAM(0);
-    IplImage * capimg;
+    capture = cvCaptureFromCAM(0);
+    if(!capture){
+        cout << "err" << endl;
+    }
 
     capimg=cvQueryFrame(capture);
 
-    double	process_time;
+
     image=cvCreateImage(cvGetSize(capimg),IPL_DEPTH_8U,3);
     cvCopy(capimg,image);
 
     gsImage=cvCreateImage(cvGetSize(image),IPL_DEPTH_8U,1);
     gsImageContour=cvCreateImage(cvGetSize(image),IPL_DEPTH_8U,1);
-    char presskey;
+
 
     //フォントの設定
-    CvFont dfont;
+
     float hscale      = 0.5f;
     float vscale      = 0.5f;
     float italicscale = 0.0f;
     int  thickness    = 1;
-    char text[255] = "";
+
     cvInitFont (&dfont, CV_FONT_HERSHEY_SIMPLEX , hscale, vscale, italicscale, thickness, CV_AA);
 
     CvFont axisfont;
@@ -121,20 +157,16 @@ void imageInit(){
 
 
     //輪郭保存用のストレージを確保
-    CvMemStorage *storage = cvCreateMemStorage (0);//輪郭用
-    CvMemStorage *storagepoly = cvCreateMemStorage (0);//輪郭近似ポリゴン用
+    storage = cvCreateMemStorage (0);//輪郭用
+    storagepoly = cvCreateMemStorage (0);//輪郭近似ポリゴン用
 
-    CvSeq *firstcontour=NULL;
-    CvSeq *polycontour=NULL;
+    firstcontour=NULL;
+    polycontour=NULL;
 
-    int contourCount;
+    marker_inside=cvCreateImage(cvSize(70,70),IPL_DEPTH_8U,1);
+    marker_inside_zoom=cvCreateImage(cvSize(marker_inside->width*2,marker_inside->height*2),IPL_DEPTH_8U,1);
+    tmp_img=cvCloneImage(marker_inside);
 
-    IplImage *marker_inside=cvCreateImage(cvSize(70,70),IPL_DEPTH_8U,1);
-    IplImage *marker_inside_zoom=cvCreateImage(cvSize(marker_inside->width*2,marker_inside->height*2),IPL_DEPTH_8U,1);
-    IplImage *tmp_img=cvCloneImage(marker_inside);
-
-    CvMat *map_matrix;
-    CvPoint2D32f src_pnt[4], dst_pnt[4], tmp_pnt[4];
 
     //マーカーの内側の変形先の形
     dst_pnt[0] = cvPoint2D32f (0, 0);
@@ -151,7 +183,7 @@ void imageInit(){
 }
 
 
-void imageProcess(cv::Mat &input, Drone *drone){
+void imageProcess(Drone &drone){
 
     cvClearMemStorage(storage);
     cvClearMemStorage(storagepoly);
@@ -363,6 +395,9 @@ void imageProcess(cv::Mat &input, Drone *drone){
                     startpoint=cvPoint((int)dstPoints2D->data.fl[0], (int)dstPoints2D->data.fl[1]);
 
                     std::cout << "x:" << startpoint.x << " y:"<<startpoint.y << std::endl;
+                    drone.cur_pos.x=startpoint.x;
+                    drone.cur_pos.y=startpoint.y;
+
 //                        for(j=1;j<4;j++)
 //                        {
 //                            endpoint=  cvPoint((int)dstPoints2D->data.fl[(j)*3],(int)dstPoints2D->data.fl[1+(j)*3]);
@@ -400,11 +435,274 @@ void imageProcess(cv::Mat &input, Drone *drone){
     cvPutText(image, text, cvPoint(10, 40), &dfont, CV_RGB(255, 255, 255));
     cvShowImage("capture_image",image);
 
-
-    presskey=cvWaitKey (50);
-    if(presskey==27)break;
 }
 
 void imageRelease(){
 
+    cvReleaseImage(&image);
+    cvReleaseImage(&gsImage);
+    cvReleaseImage(&gsImageContour);
+    cvReleaseImage(&marker_inside);
+    cvReleaseImage(&tmp_img);
+
+    cvReleaseMat (&map_matrix);
+    cvReleaseMemStorage(&storagepoly);
+    cvReleaseMemStorage(&storage);
+    cvReleaseImage(&image);
+    cvReleaseImage(&gsImage);
+
+    cvDestroyWindow("capture_image");
+
+}
+
+
+
+
+void BubSort(float arr[ ], int n)
+{
+    int i, j;
+    float temp;
+
+    for (i = 0; i < n - 1; i++)
+    {
+        for (j = n - 1; j > i; j--)
+        {
+            if (arr[j - 1] > arr[j])
+            {  /* 前の要素の方が大きかったら */
+                temp = arr[j];        /* 交換する */
+                arr[j] = arr[j - 1];
+                arr[j - 1]= temp;
+            }
+        }
+    }
+}
+
+
+//マーカーの2次元コードを読み取る
+//
+int decodeMarker(IplImage* src,int& MarkerDirection)
+{
+    if(src->nChannels!=1)
+    {
+        return -1;
+    }
+
+    if(src->width!=src->height)
+    {
+        return -1;
+    }
+
+
+    //マーカーの内側のドットを解析する。
+    //左上が基準ドット。
+    //×で表示したところが白くなっているか黒くなっているかを判断して、数字に変換して戻す。
+    //　4ビットｘ4行で16ビット。　パターンは6万通り？
+    //■□□□□□
+    //□ｘｘｘｘ□
+    //□ｘｘｘｘ□
+    //□ｘｘｘｘ□
+    //□ｘｘｘｘ□
+    //□□□□□□
+    //
+    int	whitecount=0;
+    uchar* pointer;
+    uchar* wkpointer;
+
+    int cellRow=6;
+    int cellCol=6;
+    int result[4][4];
+    int offset=5;
+    int cellsize=10;
+    int c_white=0;
+    int cellx,celly;
+
+    for (int i=0;i<4;i++)
+    {
+        for (int j=0;j<4;j++)
+        {
+            result[i][j]=0;
+        }
+    }
+
+    //ドットを検出
+    for(int y=0;y<4;y++)
+    {
+        pointer=(uchar*)(src->imageData + (y+2)*cellsize*src->widthStep);
+        for(int x=0;x<4;x++)
+        {
+            c_white=0;
+            if(pointer[src->nChannels*cellsize*(x+2)]>1)
+            {
+
+                for(celly=-2;celly<3;celly++)
+                {
+                    wkpointer=(uchar*)(src->imageData + (celly+((y+2)*cellsize))*src->widthStep);
+                    for(cellx=-2;cellx<3;cellx++)
+                    {
+                        if(pointer[src->nChannels*(cellsize*(x+2)+cellx)]>1)
+                        {
+                            c_white++;
+                        }
+                    }
+
+                }
+                if(c_white>4)
+                {
+                    whitecount++;
+                    result[y][3-x]=1;
+                }
+            }
+        }
+    }
+
+    //向きを検出
+    //
+
+    //0°　　　(10,10)から上下左右3ピクセル
+    c_white=0;
+    for(celly=-3;celly<4;celly++)
+    {
+        wkpointer=(uchar*)(src->imageData + (celly+(10))*src->widthStep);
+        for(cellx=-3;cellx<4;cellx++)
+        {
+            if(wkpointer[src->nChannels*(10+cellx)]>1)
+            {
+                c_white++;
+            }
+        }
+
+    }
+    if(c_white>30)
+    {
+        MarkerDirection=0;
+    }
+
+    //90deg　(60,10)の上下左右3ピクセル
+    c_white=0;
+    for(celly=-3;celly<4;celly++)
+    {
+        wkpointer=(uchar*)(src->imageData + (celly+(10))*src->widthStep);
+        for(cellx=-3;cellx<4;cellx++)
+        {
+            if(wkpointer[src->nChannels*(60+cellx)]>1)
+            {
+                c_white++;
+            }
+        }
+
+    }
+
+
+    if(c_white>30)
+    {
+        MarkerDirection=90;
+    }
+
+
+    //180deg　(60,60)の上下左右3ピクセル
+    c_white=0;
+    for(celly=-3;celly<4;celly++)
+    {
+        wkpointer=(uchar*)(src->imageData + (celly+(60))*src->widthStep);
+        for(cellx=-3;cellx<4;cellx++)
+        {
+            if(wkpointer[src->nChannels*(60+cellx)]>1)
+            {
+                c_white++;
+            }
+        }
+
+    }
+    if(c_white>30)
+    {
+        MarkerDirection=180;
+    }
+
+    //270deg　(10,60)の上下左右3ピクセル
+    c_white=0;
+    for(celly=-3;celly<4;celly++)
+    {
+        wkpointer=(uchar*)(src->imageData + (celly+(60))*src->widthStep);
+        for(cellx=-3;cellx<4;cellx++)
+        {
+            if(wkpointer[src->nChannels*(10+cellx)]>1)
+            {
+                c_white++;
+            }
+        }
+    }
+    if(c_white>30)
+    {
+        MarkerDirection=270;
+    }
+
+
+    //これだとまだ画像に表示されたままの順番になっているので、
+    //どちらを向いているかを検出して、その方向に配列を組みなおす必要がある。
+
+
+    //
+    int temp[4][4];
+    for(int i=0;i<4;i++)
+    {
+        for(int j=0;j<4;j++)
+        {
+            temp[i][j]=result[i][j];
+        }
+    }
+
+    if(MarkerDirection==0)
+    {
+        //何もしない
+    }
+    if(MarkerDirection==180)
+    {
+        //全部反対にする
+        for(int i=0;i<4;i++)
+        {
+            for(int j=0;j<4;j++)
+            {
+                result[3-i][3-j]=temp[i][j];
+            }
+        }
+    }
+
+    if(MarkerDirection==90)
+    {
+        //
+        for(int i=0;i<4;i++)
+        {
+            for(int j=0;j<4;j++)
+            {
+                result[j][3-i]=temp[i][j];
+            }
+        }
+    }
+
+    if(MarkerDirection==270)
+    {
+        //
+        for(int i=0;i<4;i++)
+        {
+            for(int j=0;j<4;j++)
+            {
+                result[3-j][i]=temp[i][j];
+            }
+        }
+    }
+
+
+    whitecount=0;
+    int nn=0;
+    for (int i=0;i<4;i++)
+    {
+        for (int j=0;j<4;j++)
+        {
+            nn=	(int)pow((double)16,i)*result[i][j]*pow((double)2,j);
+            whitecount=nn+ whitecount;;
+
+        }
+    }
+
+    return whitecount;
 }

@@ -5,5 +5,5 @@
 
 
 void imageInit();
-void imageProcess(cv::Mat &input, Drone *drone);
+void imageProcess(Drone &drone);
 void imageRelease();
