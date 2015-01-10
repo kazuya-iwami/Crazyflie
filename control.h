@@ -1,6 +1,5 @@
 #pragma once
 
-
 class Pos {
 
     //Pos(int _x, int _y);
@@ -20,6 +19,8 @@ public:
     Pos dst_pos;//目標座標
 
 };
+
+int getMove(Drone drone);
 
 
 
