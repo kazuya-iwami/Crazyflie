@@ -34,7 +34,7 @@ void control(Drone *drone,CCrazyflie *cflieCopter) {
 
     //　目標座標までの差
     double error_x = drone->cur_pos.x-drone->dst_pos.x;
-    double error_y = -(drone->cur_pos.y-drone->dst_pos.y);//opencvの座標系ではyが大きくなるほど下に行くから
+    double error_y = (drone->cur_pos.y-drone->dst_pos.y);//opencvの座標系ではyが大きくなるほど下に行くから
 
     // 時間 [s]
     double dt = (getTickCount() - last_t) / getTickFrequency();
@@ -66,7 +66,7 @@ void control(Drone *drone,CCrazyflie *cflieCopter) {
     double vy = kp * error_y + ki * integral_y + kd * derivative_y;
     double vz = 0.0;
     double vr = 0.0;
-    std::cout << "(vx, vy)" << "(" << vx << "," << vy << ")" << std::endl;
+    std::cout << "(vx, vy)" << "(" << vx << "," << vy << ")" << "thrust" << base_thrust+thrust_constant*vy << std::endl;
 
     cflieCopter->setThrust(base_thrust+thrust_constant*vy);
 }
