@@ -2,15 +2,15 @@
 
 class Pos {
 
-    //Pos(int _x, int _y);
+    Pos(int _x, int _y);
     int x;
     int y;
 };
 
-//Pos::Pos(int _x, int _y) {
-//    this->x = _x;
-//    this->y = _y;
-//}
+Pos::Pos(int _x, int _y) {
+    this->x = _x;
+    this->y = _y;
+}
 
 class Drone {
 public:

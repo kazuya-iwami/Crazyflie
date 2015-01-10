@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     cv::VideoCapture cap;
     Drone *drone = new Drone();
 
-
+    drone->dst_pos=Pos(180,180);
 
     bool loop_flag = true;
 
