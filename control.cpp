@@ -14,8 +14,8 @@ using namespace std;
 using namespace cv;
 
 // base thrust
-const int base_thrust=38000;
-const int thrust_constant=2000;
+const int base_thrust=44000;
+const int thrust_constant=15000;
 const double lost_threshold=0.3;
 // PID gain
 
@@ -69,9 +69,9 @@ void control(Drone *drone,CCrazyflie *cflieCopter) {
         double vy = kp * error_y + ki * integral_y + kd * derivative_y;
         double vz = 0.0;
         double vr = 0.0;
-        std::cout << "(vx, vy)" << "(" << vx << "," << vy << ")" << "thrust" << base_thrust + thrust_constant * vy << std::endl;
+        //std::cout << "(vx, vy)" << "(" << vx << "," << vy << ")" << "thrust" << base_thrust + thrust_constant * vy << std::endl;
 
-        //cflieCopter->setThrust(base_thrust + thrust_constant * vy);
+        cflieCopter->setThrust(base_thrust + thrust_constant * vy);
     }else{//clock()は1秒程度の短時間用らしい
         double buf_t=(double)clock()/CLOCKS_PER_SEC-lost_t;
         //printf("%f\n",buf_t);
@@ -81,7 +81,7 @@ void control(Drone *drone,CCrazyflie *cflieCopter) {
         }
         else if(buf_t>lost_threshold){
             cflieCopter->setThrust(0);
-            //printf("totally lost. set thrust 0\n");
+           // printf("totally lost. set thrust 0\n");
         }
     }
 }

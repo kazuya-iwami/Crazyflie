@@ -20,8 +20,8 @@ int main(int argc, char **argv) {
     cv::VideoCapture cap;
     Drone *drone = new Drone();
 
-    drone->dst_pos.x=160;//init dst_pos
-    drone->dst_pos.y=160;//init dst_pos
+    drone->dst_pos.x=320;//init dst_pos
+    drone->dst_pos.y=250;//init dst_pos
 
     bool loop_flag = true;
 
@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 
             imageProcess(drone);
             control(drone,cflieCopter);
-            int k = cvWaitKey(33);
+            int k = cvWaitKey(1);
             switch (k) {
                 case 'q':
                 case 'Q':

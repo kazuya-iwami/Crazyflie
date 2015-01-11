@@ -1,3 +1,4 @@
+
 #include "image_processing.h"
 #include "opencv2/legacy/legacy.hpp"
 #include "opencv2/legacy/compat.hpp"
@@ -8,9 +9,11 @@
 using namespace std;
 using namespace cv;
 
-CvConDensation *con;
-CvMat *lowerBound;
-CvMat *upperBound;
+char text[255] = "";
+CvFont dfont;
+
+double	process_time;
+
 
 CvCapture *capture;
 IplImage *image;
@@ -22,45 +25,23 @@ int minV, maxV ;
 
 void imageInit(){
 
-    // パーティクルフィルタ
-    con = cvCreateConDensation(4, 0, 3000);
-
     capture = cvCaptureFromCAM(0);
-    capimg=cvQueryFrame(capture);
-    image=cvCreateImage(cvGetSize(capimg),IPL_DEPTH_8U,3);
-    cvCopy(capimg,image);
 
-    // フィルタの設定
-    CvMat *lowerBound = cvCreateMat(4, 1, CV_32FC1);
-    CvMat *upperBound = cvCreateMat(4, 1, CV_32FC1);
-    cvmSet(lowerBound, 0, 0, 0);
-    cvmSet(lowerBound, 1, 0, 0);
-    cvmSet(lowerBound, 2, 0, -10);
-    cvmSet(lowerBound, 3, 0, -10);
-    cvmSet(upperBound, 0, 0, image->width);
-    cvmSet(upperBound, 1, 0, image->height);
-    cvmSet(upperBound, 2, 0, 10);
-    cvmSet(upperBound, 3, 0, 10);
-
-    // 初期化
-    cvConDensInitSampleSet(con, lowerBound, upperBound);
-
-    // 等速直線運動モデル
-    con->DynamMatr[0]  = 1.0; con->DynamMatr[1]  = 0.0; con->DynamMatr[2]  = 1.0; con->DynamMatr[3]  = 0.0;
-    con->DynamMatr[4]  = 0.0; con->DynamMatr[5]  = 1.0; con->DynamMatr[6]  = 0.0; con->DynamMatr[7]  = 1.0;
-    con->DynamMatr[8]  = 0.0; con->DynamMatr[9]  = 0.0; con->DynamMatr[10] = 1.0; con->DynamMatr[11] = 0.0;
-    con->DynamMatr[12] = 0.0; con->DynamMatr[13] = 0.0; con->DynamMatr[14] = 0.0; con->DynamMatr[15] = 1.0;
-
-    // ノイズパラメータの設定
-    cvRandInit(&(con->RandS[0]), -25, 25, (int)cvGetTickCount());
-    cvRandInit(&(con->RandS[1]), -25, 25, (int)cvGetTickCount());
-    cvRandInit(&(con->RandS[2]),  -5,  5, (int)cvGetTickCount());
-    cvRandInit(&(con->RandS[3]),  -5,  5, (int)cvGetTickCount());
 
     // 閾値
-    minH = 129, maxH = 150;
+    minH = 129, maxH = 150;//オレンジに合わせた
     minS = 127, maxS = 255;
     minV = 0, maxV = 255;
+
+    //フォントの設定
+
+    float hscale      = 0.5f;
+    float vscale      = 0.5f;
+    float italicscale = 0.0f;
+    int  thickness    = 1;
+
+    cvInitFont (&dfont, CV_FONT_HERSHEY_SIMPLEX , hscale, vscale, italicscale, thickness, CV_AA);
+
 
 
 
@@ -68,23 +49,9 @@ void imageInit(){
 
 void imageProcess(Drone *drone){
 
-    // ウィンドウ
+    process_time = (double)cvGetTickCount();
 
-//    cvNamedWindow ("capture_image", CV_WINDOW_AUTOSIZE);
-//    cvNamedWindow("binalized");
-//    cvCreateTrackbar("H max", "binalized", &maxH, 255);
-//    cvCreateTrackbar("H min", "binalized", &minH, 255);
-//    cvCreateTrackbar("S max", "binalized", &maxS, 255);
-//    cvCreateTrackbar("S min", "binalized", &minS, 255);
-//    cvCreateTrackbar("V max", "binalized", &maxV, 255);
-//    cvCreateTrackbar("V min", "binalized", &minV, 255);
-//    cvResizeWindow("binalized", 0, 0);
-
-    drone->captured_flag=false;
-
-    capimg=cvQueryFrame(capture);
-    image=cvCreateImage(cvGetSize(capimg),IPL_DEPTH_8U,3);
-    cvCopy(capimg,image);
+    image=cvQueryFrame(capture);
 
     // HSVに変換
     IplImage *hsv = cvCloneImage(image);
@@ -97,9 +64,6 @@ void imageProcess(Drone *drone){
     CvScalar lower = cvScalar(minH, minS, minV);
     CvScalar upper = cvScalar(maxH, maxS, maxV);
     cvInRangeS(hsv, lower, upper, binalized);
-
-    // 結果を表示
-    cvShowImage("binalized", binalized);
 
     // ノイズの除去
     cvMorphologyEx(binalized, binalized, NULL, NULL, CV_MOP_CLOSE);
@@ -121,10 +85,10 @@ void imageProcess(Drone *drone){
     }
 
     // 検出できた
-    if (maxContour) {
+    if (maxContour && max_area > 150) {
         // 輪郭の描画
         cvZero(binalized);
-        cvDrawContours(binalized, maxContour, cvScalarAll(255), cvScalarAll(255), 0, CV_FILLED);
+        cvDrawContours(binalized, maxContour, cvScalarAll(255),cvScalarAll(255),  -1, CV_FILLED, 8);
 
         // 重心を求める
         CvMoments moments;
@@ -133,41 +97,21 @@ void imageProcess(Drone *drone){
         int mx = (int)(moments.m10/moments.m00);
         cvCircle(image, cvPoint(mx, my), 10, CV_RGB(255,0,0));
 
-        // 各パーティクルの尤度（ゆうど）を求める
-        for (int i = 0; i < con->SamplesNum; i++) {
-            // サンプル
-            float x = (con->flSamples[i][0]);
-            float y = (con->flSamples[i][1]);
+        drone->cur_pos.x=mx;
+        drone->cur_pos.y=my;
+        drone->captured_flag = true;
 
-            // サンプルが画像範囲内にある
-            if (x > 0 && x < image->width && y > 0 && y < image->height) {
-                // ガウス分布とみなす
-                double sigma = 50.0;
-                double dist = hypot(x - mx, y - my);    // 重心に近いほど尤度が高い
-                con->flConfidence[i] = 1.0 / (sqrt (2.0 * CV_PI) * sigma) * expf (-dist*dist / (2.0 * sigma*sigma));
-            }
-            else con->flConfidence[i] = 0.0;
-            cvCircle(image, cvPointFrom32f(cvPoint2D32f(x, y)), 3, CV_RGB(0,128,con->flConfidence[i] * 50000));
-        }
+    }else{
+        drone->captured_flag = false;
     }
 
-    // 更新
-    cvConDensUpdateByTime(con);
 
-    // 重み付き平均用
-    double sumX = 0, sumY = 0, sumConf = 0;
-    for (int i = 0; i < con->SamplesNum; i++) {
-        sumX += con->flConfidence[i] * con->flSamples[i][0];
-        sumY += con->flConfidence[i] * con->flSamples[i][1];
-        sumConf += con->flConfidence[i];
-    }
+    cvCircle(image, cvPoint(drone->dst_pos.x,drone->dst_pos.y), 10, CV_RGB(0,0,255));//目標地点描写
 
-    // 推定値を計算
-    if (sumConf > 0.0) {
-        float x = sumX / sumConf;
-        float y = sumY / sumConf;
-        cvCircle(image, cvPointFrom32f(cvPoint2D32f(x, y)), 10, CV_RGB(0,255,0));
-    }
+    process_time = (double)cvGetTickCount()-process_time;
+
+    sprintf(text,"process_time %gms", process_time/(cvGetTickFrequency()*1000.));
+    cvPutText(image, text, cvPoint(10, 40), &dfont, CV_RGB(255, 255, 255));
 
     // 表示
     cvShowImage("capture_image", image);
@@ -180,8 +124,9 @@ void imageProcess(Drone *drone){
 }
 
 void imageRelease(){
-    cvReleaseMat(&lowerBound);
-    cvReleaseMat(&upperBound);
-    cvReleaseConDensation(&con);
+    cvDestroyWindow ("capture_image");
+    cvReleaseImage (&image);
+    cvReleaseImage (&capimg);
+    cvReleaseCapture (&capture);
 }
 
