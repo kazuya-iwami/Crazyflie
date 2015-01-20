@@ -14,9 +14,10 @@ using namespace std;
 using namespace cv;
 
 // base thrust
-const int base_thrust=44000;
-const int thrust_constant=15000;
-const double lost_threshold=0.3;
+const int base_thrust = 44000;
+const int thrust_constant = 30000;
+const double lost_threshold = 0.3;
+const int pitch_constant = 500;
 // PID gain
 
 // proportion
@@ -26,15 +27,17 @@ const double ki = 0.000;
 //differentiate
 const double kd = 0.000;
 
-static double lost_t=0.0;
-static double last_t = 0.0;//時間の保持(もとはint64とかいう形だった,,)
-static double integral_x = 0.0, integral_y = 0.0;//積分用
+static double lost_t = 0.0;
+static double last_t = 0.0;
+//時間の保持(もとはint64とかいう形だった,,)
+static double integral_x = 0.0, integral_y = 0.0;
+//積分用
 static double previous_error_x = 0.0, previous_error_y = 0.0;//微分用
 
 
-void control(Drone *drone,CCrazyflie *cflieCopter) {
-    if(drone->captured_flag) {
-        lost_t=0.0;
+void control(Drone *drone, CCrazyflie *cflieCopter) {
+    if (drone->captured_flag) {
+        lost_t = 0.0;
         //　目標座標までの差
         double error_x = drone->cur_pos.x - drone->dst_pos.x;
         double error_y = (drone->cur_pos.y - drone->dst_pos.y);//opencvの座標系ではyが大きくなるほど下に行くから
@@ -69,19 +72,23 @@ void control(Drone *drone,CCrazyflie *cflieCopter) {
         double vy = kp * error_y + ki * integral_y + kd * derivative_y;
         double vz = 0.0;
         double vr = 0.0;
-        //std::cout << "(vx, vy)" << "(" << vx << "," << vy << ")" << "thrust" << base_thrust + thrust_constant * vy << std::endl;
+        std::cout << "(vx, vy)" << "(" << vx << "," << vy << ")" << "thrust" << base_thrust + thrust_constant * vy << std::endl;
 
         cflieCopter->setThrust(base_thrust + thrust_constant * vy);
-    }else{//clock()は1秒程度の短時間用らしい
-        double buf_t=(double)clock()/CLOCKS_PER_SEC-lost_t;
+        cflieCopter->setPitch(vx * pitch_constant); //赤、緑LEDに挟まれたプロペラがカメラから見て見て左側になるよう置く
+        //cout << vx * pitch_constant << endl;
+
+    } else {//clock()は1秒程度の短時間用らしい
+        cflieCopter->setPitch(0);
+        double buf_t = (double) clock() / CLOCKS_PER_SEC - lost_t;
         //printf("%f\n",buf_t);
-        if(lost_t==0.0){//lostした時の時間をメモ
-            lost_t=(double)clock()/CLOCKS_PER_SEC;
+        if (lost_t == 0.0) {//lostした時の時間をメモ
+            lost_t = (double) clock() / CLOCKS_PER_SEC;
             cflieCopter->setThrust(base_thrust);
         }
-        else if(buf_t>lost_threshold){
+        else if (buf_t > lost_threshold) {
             cflieCopter->setThrust(0);
-           // printf("totally lost. set thrust 0\n");
+            // printf("totally lost. set thrust 0\n");
         }
     }
 }

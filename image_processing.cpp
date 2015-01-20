@@ -47,7 +47,7 @@ void imageInit(){
 
 }
 
-void imageProcess(Drone *drone){
+void imageProcess(Drone *drone,double battery_level){
 
     process_time = (double)cvGetTickCount();
 
@@ -110,8 +110,10 @@ void imageProcess(Drone *drone){
 
     process_time = (double)cvGetTickCount()-process_time;
 
-    sprintf(text,"process_time %gms", process_time/(cvGetTickFrequency()*1000.));
+    sprintf(text,"process_time %gms", process_time/(cvGetTickFrequency()*1000));
     cvPutText(image, text, cvPoint(10, 40), &dfont, CV_RGB(255, 255, 255));
+    sprintf(text,"battery_level %3fV/5V",battery_level);
+    cvPutText(image, text, cvPoint(10, 20), &dfont, CV_RGB(255, 255, 255));
 
     // 表示
     cvShowImage("capture_image", image);

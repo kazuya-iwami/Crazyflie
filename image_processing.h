@@ -5,5 +5,5 @@
 
 
 void imageInit();
-void imageProcess(Drone *drone);
+void imageProcess(Drone *drone,double battery_level);
 void imageRelease();
